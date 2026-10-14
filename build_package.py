@@ -19,6 +19,7 @@ PACKAGE_DIR = ROOT_DIR / "package"
 CONFIG_JSON = CONTROL_DIR / "config.json"
 CHANGELOG_TXT = CONTROL_DIR / "changelog.txt"
 APP_INIT_PY = PACKAGE_DIR / "app" / "__init__.py"
+LICENSE_FILE = ROOT_DIR / "LICENSE"
 
 DIST_DIR = ROOT_DIR / "dist"
 
@@ -65,7 +66,8 @@ def update_version(new_version: str, note: str = None):
         with open(APP_INIT_PY, "w", encoding="utf-8") as f:
             f.write(c)
 
-def create_tar_gz_in_memory(source_dir: Path, exclude_patterns=None):
+def create_tar_gz_in_memory(source_dir: Path, exclude_patterns=None, extra_files=None):
+    """tar.gz of source_dir, plus extra_files: {name in the archive: path} for files that live elsewhere."""
     if exclude_patterns is None:
         # Runtime data (DB, trained model, logs, credentials key) must never ship: post-upgrade restores with
         # `cp -an`, so a bundled file would silently replace the NAS's own copy.
@@ -73,38 +75,40 @@ def create_tar_gz_in_memory(source_dir: Path, exclude_patterns=None):
                             "classifier_model.json", "secret.key", "*.log", "app.log*", "*.tar.gz", "dist", "*.apk",
                             "apkg_validator.py"]
 
+    entries = []
+    for root, dirs, files in os.walk(source_dir):
+        dirs[:] = [d for d in dirs if not any(Path(d).match(p) for p in exclude_patterns)]
+        for file in files:
+            if not any(Path(file).match(p) for p in exclude_patterns):
+                file_path = Path(root) / file
+                entries.append((file_path, file_path.relative_to(source_dir).as_posix()))
+    entries += [(Path(path), arcname) for arcname, path in (extra_files or {}).items()]
+
     buf = io.BytesIO()
     with tarfile.open(fileobj=buf, mode="w:gz") as tar:
-        for root, dirs, files in os.walk(source_dir):
-            dirs[:] = [d for d in dirs if not any(Path(d).match(p) for p in exclude_patterns)]
-            for file in files:
-                if any(Path(file).match(p) for p in exclude_patterns):
-                    continue
-                file_path = Path(root) / file
-                arcname = file_path.relative_to(source_dir).as_posix()
+        for file_path, arcname in entries:
+            # Read content and normalize line endings for scripts/text
+            with open(file_path, "rb") as f:
+                content = f.read()
 
-                # Read content and normalize line endings for scripts/text
-                with open(file_path, "rb") as f:
-                    content = f.read()
+            # Normalize CRLF to LF for shell scripts and source files
+            if file_path.suffix.lower() in [".sh", ".py", ".json", ".txt", ".html", ".css", ".js"] or file_path.name == "LICENSE":
+                content = content.replace(b"\r\n", b"\n")
 
-                # Normalize CRLF to LF for shell scripts and source files
-                if file_path.suffix.lower() in [".sh", ".py", ".json", ".txt", ".html", ".css", ".js"]:
-                    content = content.replace(b"\r\n", b"\n")
+            tarinfo = tarfile.TarInfo(name=arcname)
+            tarinfo.size = len(content)
+            tarinfo.mtime = int(file_path.stat().st_mtime)
+            tarinfo.uid = 0
+            tarinfo.gid = 0
+            tarinfo.uname = "root"
+            tarinfo.gname = "root"
 
-                tarinfo = tarfile.TarInfo(name=arcname)
-                tarinfo.size = len(content)
-                tarinfo.mtime = int(file_path.stat().st_mtime)
-                tarinfo.uid = 0
-                tarinfo.gid = 0
-                tarinfo.uname = "root"
-                tarinfo.gname = "root"
+            if file_path.suffix.lower() in [".sh", ".py"]:
+                tarinfo.mode = 0o755
+            else:
+                tarinfo.mode = 0o644
 
-                if file_path.suffix.lower() in [".sh", ".py"]:
-                    tarinfo.mode = 0o755
-                else:
-                    tarinfo.mode = 0o644
-
-                tar.addfile(tarinfo, fileobj=io.BytesIO(content))
+            tar.addfile(tarinfo, fileobj=io.BytesIO(content))
     buf.seek(0)
     return buf
 
@@ -117,7 +121,8 @@ def build_apkg(new_version: str):
     print("Packing CONTROL...")
     control_bytes = create_tar_gz_in_memory(CONTROL_DIR)
     print("Packing package...")
-    package_bytes = create_tar_gz_in_memory(PACKAGE_DIR)
+    # MIT: the license notice travels with every copy of the software
+    package_bytes = create_tar_gz_in_memory(PACKAGE_DIR, extra_files={"LICENSE": LICENSE_FILE})
 
     # The APKG format of ASUSTOR ADM 2.0+ strictly requires:
     # 1. 'apkg-version' containing '2.0\n'

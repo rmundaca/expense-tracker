@@ -25,3 +25,16 @@ def test_package_excludes_runtime_data():
         names = tar.getnames()
         assert names == ["app/main.py"]
         assert tar.extractfile("app/main.py").read() == b"print('hi')\n"  # CRLF normalized for the NAS
+
+
+def test_package_carries_the_license():
+    root = Path(tempfile.mkdtemp())
+    (root / "app").mkdir()
+    (root / "app" / "main.py").write_text("x")
+    license_file = Path(tempfile.mkdtemp()) / "LICENSE"
+    license_file.write_bytes(b"MIT License\r\n")
+
+    archive = create_tar_gz_in_memory(root, extra_files={"LICENSE": license_file})
+    with tarfile.open(fileobj=io.BytesIO(archive.getvalue())) as tar:
+        assert sorted(tar.getnames()) == ["LICENSE", "app/main.py"]
+        assert tar.extractfile("LICENSE").read() == b"MIT License\n"
