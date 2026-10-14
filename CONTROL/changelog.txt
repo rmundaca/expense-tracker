@@ -1,0 +1,8 @@
+1.0.0 (2026-10-14)
+- Initial public release
+- Mobile web app for expenses and income: Home, Transactions, Review, Plan, Budgets and Settings
+- Imports bank notification emails from Gmail, Outlook / Microsoft 365 (OAuth), IMAP or POP3 mailboxes, with encrypted credentials
+- Categorization by rules, per-merchant memory and Naive Bayes; recurring transactions; budgets
+- Multi-currency (CLP, USD, EUR, UF) with official rates from mindicador.cl
+- Several independent users, each with their own database
+- English and Spanish, chosen in Settings > Appearance

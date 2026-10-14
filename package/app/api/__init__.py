@@ -1,0 +1,13 @@
+from app.api.accounts import router as accounts_router
+from app.api.auth import router as auth_router
+from app.api.banks import router as banks_router
+from app.api.budgets import router as budgets_router
+from app.api.categories import router as categories_router
+from app.api.exchange_rates import router as exchange_rates_router
+from app.api.mail import router as mail_router
+from app.api.recurring import router as recurring_router
+from app.api.rules import router as rules_router
+from app.api.stats import router as stats_router
+from app.api.system import router as system_router
+from app.api.transactions import router as transactions_router
+from app.api.users import router as users_router

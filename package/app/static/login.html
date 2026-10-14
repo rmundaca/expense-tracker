@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Expense Tracker</title>
+    <link rel="icon" type="image/png" href="/static/img/icon.png">
+    <link rel="apple-touch-icon" href="/static/img/apple-touch-icon.png">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="theme-color" content="#EEF1F6" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#0B0F19" media="(prefers-color-scheme: dark)">
+    <script>
+        try {
+            var theme = localStorage.getItem("theme");
+            if (theme === "light" || theme === "dark") {
+                document.documentElement.setAttribute("data-theme", theme);
+                document.querySelectorAll('meta[name="theme-color"]').forEach(function (m) { m.content = theme === "dark" ? "#0B0F19" : "#EEF1F6"; });
+            }
+        } catch (e) { /* storage unavailable */ }
+    </script>
+    <link rel="stylesheet" href="/static/css/app.css">
+</head>
+
+<body>
+    <main class="login-page">
+        <div class="card login-card">
+            <div class="login-brand">
+                <img src="/static/img/icon.png" alt="">
+                <h1>Expense Tracker</h1>
+                <div id="subtitle" class="muted small" data-i18n="login.subtitle"></div>
+            </div>
+
+            <form id="loginForm" novalidate>
+                <div id="error" class="form-error" role="alert" hidden></div>
+                <div class="field">
+                    <label for="username" data-i18n="users.username"></label>
+                    <input type="text" id="username" class="input" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" autofocus>
+                </div>
+                <div id="nameField" class="field" hidden>
+                    <label for="displayName" data-i18n="login.your_name"></label>
+                    <input type="text" id="displayName" class="input" autocomplete="name">
+                </div>
+                <div class="field">
+                    <label for="password" data-i18n="field.password"></label>
+                    <input type="password" id="password" class="input" autocomplete="current-password">
+                </div>
+                <div id="confirmField" class="field" hidden>
+                    <label for="passwordConfirm" data-i18n="login.repeat_password"></label>
+                    <input type="password" id="passwordConfirm" class="input" autocomplete="new-password">
+                </div>
+                <button type="submit" id="submitBtn" class="btn btn-primary btn-block" data-i18n="login.submit"></button>
+            </form>
+        </div>
+    </main>
+
+    <script src="/static/js/locales/en.js"></script>
+    <script src="/static/js/locales/es.js"></script>
+    <script src="/static/js/i18n.js"></script>
+    <script>
+        applyI18n();
+        const MIN_LENGTH = 6;
+        let setupMode = false;
+        const $ = (id) => document.getElementById(id);
+
+        function showError(msg) {
+            $("error").textContent = msg;
+            $("error").hidden = !msg;
+        }
+
+        async function init() {
+            try {
+                const status = await (await fetch("/api/auth/status")).json();
+                if (status.authenticated) return window.location.replace("/");
+                setupMode = !status.configured;
+            } catch (e) {
+                return showError(t("login.server_unreachable"));
+            }
+            if (setupMode) {
+                $("subtitle").textContent = t("login.setup_subtitle");
+                $("nameField").hidden = false;
+                $("confirmField").hidden = false;
+                $("password").setAttribute("autocomplete", "new-password");
+                $("password").placeholder = t("common.min_chars", { count: MIN_LENGTH });
+                $("submitBtn").textContent = t("login.create_admin");
+            }
+        }
+
+        $("loginForm").addEventListener("submit", async (ev) => {
+            ev.preventDefault();
+            showError("");
+            const username = $("username").value.trim().toLowerCase();
+            const password = $("password").value;
+            if (!username) return showError(t("login.enter_username"));
+            if (setupMode) {
+                if (!/^[a-z0-9._-]{3,32}$/.test(username)) return showError(t("login.invalid_username"));
+                if (password.length < MIN_LENGTH) return showError(t("login.min_length", { count: MIN_LENGTH }));
+                if (password !== $("passwordConfirm").value) return showError(t("login.mismatch"));
+            } else if (!password) {
+                return showError(t("login.enter_password"));
+            }
+            const payload = setupMode ? { username, password, display_name: $("displayName").value.trim() || null } : { username, password };
+            $("submitBtn").disabled = true;
+            try {
+                const res = await fetch(setupMode ? "/api/auth/setup" : "/api/auth/login", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+                if (res.ok) return window.location.replace("/");
+                const body = await res.json().catch(() => ({}));
+                showError(body.detail || t("error.status", { status: res.status }));
+                $("password").select();
+            } catch (e) {
+                showError(t("login.server_unreachable"));
+            } finally {
+                $("submitBtn").disabled = false;
+            }
+        });
+
+        init();
+    </script>
+</body>
+
+</html>

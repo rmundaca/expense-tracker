@@ -1,0 +1,75 @@
+# ==============================================================================
+# Runtime data (NEVER commit): SQLite DB, trained model, logs.
+# The DB holds personal finances and encrypted mail credentials; data/secret.key decrypts them.
+# ==============================================================================
+package/data/
+*.db
+*.db-wal
+*.db-shm
+*.db-journal
+*.sqlite
+*.sqlite3
+*.sqlite-wal
+*.sqlite-shm
+*.log
+
+# ==============================================================================
+# Build & distribution artifacts (Asustor APKG)
+# ==============================================================================
+dist/
+build/
+*.apk
+*.apkg
+*.egg-info/
+*.egg
+Expense Tracker Toshl_*
+
+# ==============================================================================
+# Python caches & tooling
+# ==============================================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# ==============================================================================
+# Virtual environments
+# ==============================================================================
+venv/
+.venv/
+env/
+ENV/
+
+# ==============================================================================
+# Secrets & exports that may contain personal data
+# ==============================================================================
+.env
+.env.*
+!.env.example
+credentials.json
+token.json
+*.csv
+*.bak
+
+# ==============================================================================
+# OS & IDE metadata
+# ==============================================================================
+.vscode/
+.idea/
+.claude/
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+*~
+
+# ==============================================================================
+# Local notes (not part of the project)
+# ==============================================================================
+ASUSTOR_AS202TE_APP_TEMPLATE.md

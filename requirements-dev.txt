@@ -1,0 +1,8 @@
+# Test dependencies. Installs the same pinned ranges the NAS runs (package/requirements.txt)
+# so tests exercise FastAPI <0.100, Pydantic v1 and SQLAlchemy 1.4 instead of whatever is global.
+#   python -m venv .venv && .venv\Scripts\pip install -r requirements-dev.txt
+#   .venv\Scripts\python -m pytest tests
+-r package/requirements.txt
+pytest>=7.0
+# Starlette 0.27 (FastAPI <0.100) TestClient breaks with httpx 0.28+
+httpx>=0.24,<0.28

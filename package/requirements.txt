@@ -1,0 +1,8 @@
+fastapi>=0.95.0,<0.100.0
+uvicorn>=0.20.0
+apscheduler>=3.10.0
+httpx>=0.24.0
+itsdangerous>=2.1.0
+sqlalchemy>=1.4.0,<2.0.0
+pydantic>=1.10.0,<2.0.0
+beautifulsoup4>=4.11.0
