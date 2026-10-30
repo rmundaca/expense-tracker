@@ -1,142 +1,175 @@
-# Expense Tracker for Asustor AS-202TE
+# Expense Tracker para Asustor AS-202TE
 
-A personal expense and income web app, designed to be used from your phone. It automatically imports the
-transactions your Chilean banks email you (from Gmail, Outlook or any IMAP/POP3 mailbox), leaves them
-"to review" with a suggested category, and learns from what you confirm.
+Aplicación web personal para registrar gastos e ingresos, pensada para usar también desde el teléfono. Importa
+automáticamente los movimientos que notifican los bancos chilenos por correo (Gmail, Outlook u otros buzones
+IMAP/POP3), los deja pendientes de revisión con una categoría sugerida y aprende de las correcciones.
 
-It runs on the **Asustor AS-202TE** NAS (32-bit Intel Atom, 1 GB RAM, ADM 3.5.x, Python 3.11 via Entware),
-and anywhere Python 3.10+ runs. It is built for Chile: amounts are in Chilean pesos (CLP) with USD, EUR and UF
-converted at official rates, and the email parsers understand Chilean banks' notifications.
+Funciona en el NAS **Asustor AS-202TE** (Intel Atom de 32 bits, 1 GB de RAM, ADM 3.5.x y Python 3.11 mediante
+Entware) y en computadores con Python 3.10 o posterior. Está orientada a Chile: usa pesos chilenos (CLP),
+convierte USD, EUR y UF con valores oficiales, y reconoce notificaciones de bancos chilenos.
 
-## What it does
+## Funciones
 
-- **Home**: net worth, the month's income and expenses, categories (list and pie charts), accounts and
-  budgets. Each user chooses which cards to show and in what order (*Customize Home*).
-- **Transactions**: history by day, with search and filters by account or category. From here you open
-  **Review**: transactions imported from email (or recurring ones that ask for review); approve them with one tap or edit them.
-- **Plan**: month-by-month bar chart of balance, expenses, income or net worth; future months include
-  what recurring transactions plan.
-- **Budgets**: limits for all expenses, only some categories, or everything except some; daily, weekly,
-  monthly, yearly (every N periods) or one-off; with a fixed amount or a % of the expected monthly income.
-  Tapping one shows the transactions it counts in each period, largest first, to spot expenses that don't belong.
-- **Settings**: appearance and language, accounts, categories, recurring transactions, rules, mailboxes,
-  banks, backup/CSV import, password and users.
+- **Inicio**: patrimonio, ingresos y gastos del mes, categorías, cuentas y presupuestos. Cada usuario elige qué
+  paneles mostrar y en qué orden.
+- **Movimientos**: historial diario con búsqueda y filtros por cuenta o categoría. La vista **Revisar** permite
+  confirmar o editar movimientos importados y movimientos recurrentes pendientes.
+- **Plan**: gráficos mensuales de saldo, gastos, ingresos o patrimonio; los meses futuros incluyen movimientos
+  recurrentes previstos.
+- **Presupuestos**: límites por categorías, periodos diarios, semanales, mensuales o anuales, y montos fijos o
+  porcentajes del ingreso mensual esperado.
+- **Configuración**: apariencia, idioma, cuentas, categorías, movimientos recurrentes, reglas, correo, bancos,
+  respaldos, importación CSV, contraseña y usuarios.
+- **Saldos calculados**: saldo inicial más movimientos confirmados, convertidos a la moneda de la cuenta según
+  el tipo de cambio de cada movimiento. Las correcciones de saldo se registran como ajustes, no como ingresos ni gastos.
+- **Movimientos recurrentes**: cada repetición se registra en su fecha aunque el NAS haya estado apagado. Una
+  repetición programada para el día 31 ocurre el último día de los meses más cortos.
+- **Multimoneda**: CLP, USD, EUR y UF, con valores diarios de [mindicador.cl](https://mindicador.cl), sin credenciales.
+- **Clasificación**: reglas (por ejemplo, `jumbo OR lider`), aprendizaje por comercio y un clasificador Naive Bayes
+  como último recurso.
+- **Usuarios independientes**: cada usuario tiene sus propias cuentas, movimientos, categorías, reglas y buzones.
+  No hay registro público; el primer usuario se crea al iniciar la aplicación y es administrador.
 
-How it works:
+## Capturas de pantalla
 
-- **Computed balances**: each account's balance is its opening balance plus its confirmed transactions,
-  converted to the account's currency at each transaction's exchange rate.
-  Correcting a balance records an *adjustment*, which counts as neither income nor expense.
-- **Recurring transactions** (daily, weekly, monthly or yearly): each repetition is recorded on its date,
-  including those that fall while the NAS is off. One on the 31st falls on the last day of shorter months.
-- **Multi-currency** (CLP, USD, EUR, UF) with official values from [mindicador.cl](https://mindicador.cl)
-  (no credentials needed), updated daily.
-- **Categorization** in three levels: rules (`jumbo OR lider`, whole words), memory of what you chose
-  for each merchant, and a lightweight Naive Bayes as a last resort.
-- **Several fully independent users**: each one has their own accounts, transactions, categories, rules,
-  learning and mailboxes. Nothing is shared between users.
-- **Username and password sign-in**. The first user (an administrator) is created on first access;
-  after that, only an administrator creates users in **Settings > Users** (there is no public sign-up).
+Ejemplos de las principales vistas. Todas las capturas usan datos ficticios.
 
-## Languages
+![Panel de inicio con resumen mensual, categorías, cuentas y presupuestos](docs/screenshots/inicio.png)
 
-The app is available in **English** and **Spanish**. Each user picks the language in
-**Settings > Appearance > Language**; *System* follows the device's language (English when it is neither).
-The choice is stored on the device and also on the server, so background jobs (mail sync, exchange rates)
-write their status messages in it. A new user's default accounts, categories and rules are named in the
-language of whoever creates them: the administrator's for users added in Settings > Users, the setup
-screen's for the first user. They are ordinary data afterwards and can be renamed.
+<table>
+  <tr>
+    <td align="center"><strong>Movimientos</strong><br><img src="docs/screenshots/movimientos.png" width="520" alt="Historial de movimientos con filtros y un movimiento pendiente"></td>
+    <td align="center"><strong>Planificación</strong><br><img src="docs/screenshots/plan.png" width="520" alt="Gráfico de planificación mensual con ingresos y gastos"></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>Presupuestos</strong><br><img src="docs/screenshots/presupuestos.png" width="520" alt="Presupuestos por categoría con progreso del periodo"></td>
+    <td align="center"><strong>Revisión</strong><br><img src="docs/screenshots/revision.png" width="520" alt="Movimiento importado pendiente de aprobar, editar o descartar"></td>
+  </tr>
+</table>
 
-Translations live in two places, each with one file per language:
+## Idiomas
 
-- Web app: `package/app/static/js/locales/<code>.js` (loaded by `index.html` and `login.html`).
-- Server messages and default data: `package/app/i18n/<code>.py` (registered in `package/app/i18n/__init__.py`).
+La interfaz está disponible en español e inglés. Cada usuario elige el idioma en **Configuración > Apariencia >
+Idioma**; la opción *Sistema* sigue el idioma del dispositivo. La preferencia se guarda también en el servidor para los mensajes de tareas automáticas.
 
-To add a language, copy the English files, translate the values (keep the keys and `{placeholders}`),
-register it in both places and add its name to `LANGUAGE_NAMES` in `static/js/i18n.js`.
-`tests/test_i18n.py` checks that every catalog has the same keys and placeholders.
+Las traducciones están en:
 
-## Local development
+- Interfaz web: `package/app/static/js/locales/<código>.js`.
+- Mensajes y datos iniciales del servidor: `package/app/i18n/<código>.py`.
 
-```bash
-run_local.bat                       # http://localhost:8010
+Para agregar un idioma, traduce los valores sin cambiar las claves ni los `{marcadores}`, registra el idioma en
+ambos catálogos y añádelo a `LANGUAGE_NAMES` en `package/app/static/js/i18n.js`. `tests/test_i18n.py` comprueba
+que las claves y los marcadores coincidan.
+
+## Ejecución manual en Windows
+
+Abre PowerShell en la carpeta raíz del proyecto. Instala Python 3.11 (se admite Python 3.10 o posterior) y ejecuta:
+
+```powershell
+py -3.11 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r package\requirements.txt
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --app-dir package --host 127.0.0.1 --port 8010 --reload
 ```
 
-Tests (with the same versions the NAS uses):
+Abre `http://localhost:8010` y crea el primer usuario administrador. La documentación de la API está en
+`http://localhost:8010/docs`. Detén el servidor con `Ctrl+C`.
 
-```bash
-python -m venv .venv
-.venv\Scripts\pip install -r requirements-dev.txt
-.venv\Scripts\python -m pytest tests
+También puedes ejecutar `run_local.bat` después de instalar las dependencias; usará `.venv` si existe. Para
+acceder desde otros dispositivos de la red, cambia `--host 127.0.0.1` por `--host 0.0.0.0`, permite el puerto
+8010 en el firewall de Windows para redes privadas y sigue las recomendaciones de [Seguridad](#seguridad-y-datos).
+
+## Pruebas y desarrollo
+
+Para instalar también las dependencias de prueba y ejecutar la suite:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
+.\.venv\Scripts\python.exe -m pytest tests
 ```
 
-Tests use a temporary database; they never touch `package/data/`.
+Las pruebas usan bases temporales y no modifican `package/data/`.
 
-## Building and installing on the NAS
+## Instalación en el NAS
 
-```bash
-python build_package.py            # builds dist/expense-tracker.apk (bumps the version)
+1. Instala **Entware** desde App Central en ADM.
+2. Desde Windows, crea el paquete APKG en la raíz del proyecto (consulta [Preparar el paquete](#preparar-el-paquete))
+   o descarga un APKG de la sección Releases de GitHub.
+3. En ADM, abre **App Central > Administración > Instalación manual** y selecciona el APKG descargado o
+   `dist/expense-tracker.apk` si lo compilaste localmente.
+4. Abre la aplicación en `http://<IP_DEL_NAS>:8010` y crea el administrador inmediatamente. Mientras no exista
+   ningún usuario, la primera persona que abra la aplicación podrá crear esa cuenta.
+
+Las actualizaciones conservan `data/app.db` y `data/users/`. Las bases de datos, registros, respaldos y la clave
+de cifrado se mantienen en el NAS y no se incluyen en el paquete.
+
+## Preparar el paquete
+
+Desde la raíz del proyecto, ejecuta en PowerShell. El empaquetador solo usa la biblioteca estándar de Python:
+
+```powershell
+py -3.11 build_package.py
 ```
 
-1. In ADM, install **Entware** from App Central.
-2. **App Central > Management > Manual Install**, upload `dist/expense-tracker.apk`.
-3. Open the app (port **8010**) and **create the administrator right away**: while no user exists,
-   whoever opens the app first defines it.
+El archivo se genera en `dist/expense-tracker.apk`. Por defecto, el comando incrementa la versión del paquete;
+usa `py -3.11 build_package.py --no-bump` para conservarla. `build.bat` ofrece el mismo proceso si Python está
+disponible en `PATH`.
 
-Upgrades keep the data (`data/app.db` and `data/users/`). The package never includes data: the
-databases, logs and backups stay on the NAS only.
+## Usuarios y respaldos
 
-**Security**: the app serves plain HTTP. Use it on your home network or through a VPN, not exposed
-to the internet.
+- **Crear**: en **Configuración > Usuarios > Nuevo usuario**, indica nombre de usuario, nombre, contraseña y si
+  será administrador. Cada usuario nuevo comienza con cuentas, categorías, reglas y bancos predeterminados.
+- **Restablecer contraseña o desactivar**: cierra de inmediato las sesiones abiertas de ese usuario. Un usuario
+  desactivado conserva sus datos y puede reactivarse.
+- **Eliminar**: debes escribir el nombre de usuario para confirmar. Su base de datos se archiva en
+  `data/users/deleted/` en el NAS; no se borra.
+- Siempre debe quedar al menos un administrador activo.
+- **Respaldar**: en **Configuración > Datos y respaldo**, cada usuario descarga sus propios datos. Un administrador
+  también puede descargar el respaldo completo (`.zip` con `app.db` y todas las bases de datos de `users/`).
+  Las contraseñas y los tokens del correo se cifran con `data/secret.key`, que no forma parte del respaldo. Al
+  restaurar en otro dispositivo, hay que volver a ingresar o conectar las cuentas de correo.
 
-## Users
+## Configuración del correo
 
-- **Create**: Settings > Users > New user (username, name, password and whether they are an administrator).
-  Each new user starts with the default accounts, categories, rules and banks.
-- **Reset a password or deactivate**: immediately closes that user's open sessions.
-  A deactivated user keeps their data and can be reactivated.
-- **Delete**: asks you to type the username. Their database is not erased: it is archived in
-  `data/users/deleted/` on the NAS.
-- At least one active administrator must always remain.
-- **Backup**: in Settings > Data and backup, each user downloads only their own data; an administrator
-  can also download the full backup (a `.zip` with `app.db` and every database in `users/`).
-  Mail passwords and tokens are stored encrypted with `data/secret.key`, which is not part of the
-  backups: when restoring on another device they must be entered again.
+En **Configuración > Correo**, cada usuario agrega buzones, configura la sincronización automática y usa **Probar**.
+En **Configuración > Bancos** se revisan los remitentes y la cuenta predeterminada de cada banco.
 
-## Setting up email
+- **Gmail**: activa la verificación en dos pasos, crea una [contraseña de aplicación](https://myaccount.google.com/apppasswords)
+  y úsala como contraseña del buzón.
+- **Outlook, Hotmail y Microsoft 365**: se conectan mediante OAuth2. Cada usuario registra su propia aplicación
+  en [Microsoft Entra](https://entra.microsoft.com) > **Registros de aplicaciones**. Selecciona el tipo de cuenta
+  «Cualquier directorio organizativo y cuentas personales de Microsoft», activa **Permitir flujos de cliente públicos**
+  y agrega el permiso delegado `IMAP.AccessAsUser.All` de Office 365 Exchange Online. Ingresa el «Id. de aplicación
+  (cliente)» en el buzón y sigue el código que muestra **Conectar con Microsoft** en `microsoft.com/devicelogin`.
+  En cuentas de trabajo, el administrador podría tener que aprobar la aplicación o habilitar IMAP.
+- **Otros buzones IMAP**: configura servidor, puerto y seguridad (SSL/TLS o STARTTLS). Las carpetas son opcionales;
+  si no se indican, se revisa la bandeja de entrada y, si está vacía, la carpeta «All Mail».
+- **POP3**: solo revisa la bandeja de entrada y lee encabezados desde el correo más reciente. No elimina mensajes.
+  Gmail por POP entrega cada mensaje una sola vez.
 
-In **Settings > Email** each user adds one or more mailboxes, turns on automatic sync and uses **Test**.
-In **Settings > Banks** you review each bank's senders and its default account.
+## Seguridad y datos
 
-- **Gmail**: with 2-Step Verification on, create a Google
-  [app password](https://myaccount.google.com/apppasswords) and use it as the password.
-- **Outlook / Hotmail / Microsoft 365**: Microsoft does not accept passwords over IMAP, so OAuth2 is used.
-  Each user registers their own application in [Microsoft Entra](https://entra.microsoft.com) > App
-  registrations: account type "Accounts in any organizational directory and personal Microsoft accounts",
-  **Allow public client flows** = Yes, and the delegated permission `IMAP.AccessAsUser.All` (Office 365
-  Exchange Online). Its "Application (client) ID" goes in the mailbox; then **Connect to Microsoft** shows a
-  code to enter at microsoft.com/devicelogin. On work accounts the administrator may have to approve the
-  application or enable IMAP.
-- **Other IMAP** (Yahoo, iCloud, Zoho, corporate mail): server, port and security (SSL/TLS or
-  STARTTLS). Optionally, the folders to check; otherwise the inbox and, if it is empty, the
-  "All Mail" folder.
-- **POP3**: last resort. It only sees the inbox and reads headers from the newest email backwards.
-  It never deletes emails. Gmail over POP delivers each email only once.
+La aplicación sirve **HTTP sin cifrado TLS**. Úsala solo en una red local de confianza o mediante una VPN; no
+expongas ni redirijas el puerto 8010 a Internet. Crea el primer usuario administrador antes de dejar el servicio
+accesible a otros dispositivos.
 
-## Architecture
+Las credenciales de correo se guardan cifradas con `data/secret.key`. Esa clave no se incluye en los respaldos;
+al restaurar en otro dispositivo hay que volver a ingresar o conectar las cuentas de correo. Los respaldos se
+descargan desde **Configuración > Datos y respaldo**: cada usuario obtiene sus propios datos y un administrador
+puede descargar el respaldo completo.
 
-- **Backend**: FastAPI `<0.100` + Pydantic v1 + SQLAlchemy 1.4 (32-bit compatible), SQLite in WAL mode.
-- **Frontend**: HTML/CSS/JS with no dependencies and no build step (`package/app/static`).
-- **Jobs**: APScheduler (mail every N minutes, exchange rates daily).
-- **Data**: `data/app.db` holds the users (`models/app_schemas.py`); each user has their own database
-  `data/users/<id>.db` with the full schema (`models/schemas.py`). `get_db` opens the database of the
-  session's user, so no query needs to filter by user.
-- **Migrations**: `run_migrations()` in `package/app/models/schemas.py`, versioned with `schema_version`;
-  they are applied to each user's database the first time it is opened. The move from a single user is in
-  `core/app_setup.py`.
-- **Translations**: `package/app/i18n` (server) and `package/app/static/js/i18n.js` + `js/locales/` (web app);
-  see [Languages](#languages).
+## Arquitectura
 
-## License
+- **Servidor**: FastAPI `<0.100`, Pydantic v1, SQLAlchemy 1.4 y SQLite en modo WAL; compatible con 32 bits.
+- **Interfaz**: HTML, CSS y JavaScript sin dependencias externas ni compilación, en `package/app/static/`.
+- **Tareas automáticas**: APScheduler sincroniza correo cada cierto intervalo y actualiza los tipos de cambio a diario.
+- **Datos**: `data/app.db` guarda los usuarios y `data/users/<id>.db` los datos de cada uno. Las migraciones se
+  ejecutan al abrir por primera vez cada base de datos.
+- **Importación de instalaciones antiguas**: la migración desde la base de datos de un solo usuario está en
+  `package/app/core/app_setup.py`.
+- **Traducciones**: mensajes del servidor en `package/app/i18n/` e interfaz web en `package/app/static/js/locales/`;
+  consulta [Idiomas](#idiomas).
 
-[MIT](LICENSE). Chart.js (bundled in `package/app/static/js/vendor/`) is also MIT licensed.
+## Licencia
+
+El proyecto se distribuye bajo la licencia [MIT](LICENSE). Chart.js, incluido en
+`package/app/static/js/vendor/`, también se distribuye bajo MIT.
