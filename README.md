@@ -1,4 +1,4 @@
-# Expense Tracker para Asustor AS-202TE
+# Expense Tracker
 
 Aplicación web personal para registrar gastos e ingresos, pensada para usar también desde el teléfono. Importa
 automáticamente los movimientos que notifican los bancos chilenos por correo (Gmail, Outlook u otros buzones
